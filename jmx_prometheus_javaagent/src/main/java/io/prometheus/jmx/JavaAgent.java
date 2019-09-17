@@ -1,14 +1,19 @@
 package io.prometheus.jmx;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.lang.instrument.Instrumentation;
 import java.net.InetSocketAddress;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Map;
 
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.hotspot.DefaultExports;
+
+import org.yaml.snakeyaml.Yaml;
 
 public class JavaAgent {
 
@@ -43,22 +48,21 @@ public class JavaAgent {
      * @param ifc default bind interface
      * @return configuration to use for our application
      */
-    public static Config parseConfig(String args, String ifc) {
+    public static Config parseConfig(String args, String ifc) throws IOException {
         Pattern pattern = Pattern.compile(
-                "^(?:((?:[\\w.]+)|(?:\\[.+])):)?" +  // host name, or ipv4, or ipv6 address in brackets
-                        "(\\d{1,5}):" +              // port
-                        "(.+)");                     // config file
+                "^(.+)");                     // config file
 
         Matcher matcher = pattern.matcher(args);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Malformed arguments - " + args);
         }
 
-        String givenHost = matcher.group(1);
-        String givenPort = matcher.group(2);
-        String givenConfigFile = matcher.group(3);
+        String givenConfigFile = matcher.group(1);
 
-        int port = Integer.parseInt(givenPort);
+        File in = new File(givenConfigFile);
+        Map<String, Object> configs= (Map<String, Object>)new Yaml().load(new FileReader(in));
+        String givenHost = (String) configs.get("httpHost");
+        Integer port = (Integer) configs.get("httpPort");
 
         InetSocketAddress socket;
         if (givenHost != null && !givenHost.isEmpty()) {

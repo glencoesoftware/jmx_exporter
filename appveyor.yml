@@ -1,0 +1,10 @@
+build: off
+
+build_script:
+  - mvn package
+
+test_script:
+  - mvn test
+
+artifacts:
+  - path: jmx_prometheus_javaagent\target\jmx_prometheus_javaagent*
